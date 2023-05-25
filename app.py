@@ -9,7 +9,7 @@ key='secret_key_parking'
 
 app = Flask(__name__)
 #CORS(app, resources={r"/*": {"origins": "*"}})
-cors = CORS(app, resources={r"/*": {"origins": "https://mineria-ml.vercel.app"}})
+cors = CORS(app, resources={r"/*": {"origins": "http://localhost:4200"}})
 
 app.register_blueprint(usuarios)
 

@@ -10,20 +10,29 @@ class controller():
         query=mod_admin.login()
         return query
     
-    def  getAll(self):
-        query=mod_admin.getAll()
+    def  enviar(self):
+        query=mod_admin.enviar()
         return query
     
-    def  getAlcohol(self):
-        query=mod_admin.getAlcohol()
+    def  getn(self):
+        query=mod_admin.getn()
         return query
-        
+    
     def  predecir(self):
         query=mod_admin.predecir()
         return query
     
-    def  getQuality(self):
-        query=mod_admin.getQuality()
+    def  celcius(self):
+        query=mod_admin.celcius()
+        return query
+        
+    
+    def  eliminar_notificacion(self):
+        query=mod_admin.eliminar_notificacion()
+        return query
+    
+    def  getPre(self):
+        query=mod_admin.getPre()
         return query
         
         

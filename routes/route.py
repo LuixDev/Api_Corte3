@@ -15,23 +15,34 @@ def login():
    return conexion.login()
 
 
-@usuarios.route('/consultar', methods=['GET'])
+@usuarios.route('/enviar', methods=['POST'])
 @cross_origin()
-def getAll():
-   return conexion.getAll()
-
-
-@usuarios.route('/alcohol', methods=['GET'])
-@cross_origin()
-def getAlcohol():
-   return conexion.getAlcohol()
-
-@usuarios.route('/quality', methods=['GET'])
-@cross_origin()
-def getQuality():
-   return conexion.getQuality()
+def enviar():
+   return conexion.enviar()
 
 @usuarios.route('/predecir', methods=['POST'])
 @cross_origin()
 def predecir():
    return conexion.predecir()
+
+@usuarios.route('/celcius', methods=['POST'])
+@cross_origin()
+def celcius():
+   return conexion.celcius()
+
+
+@usuarios.route('/getn', methods=['GET'])
+@cross_origin()
+def getn():
+   return conexion.getn()
+
+@usuarios.route('/getpre', methods=['GET'])
+@cross_origin()
+def getPre():
+   return conexion.getPre()
+
+@usuarios.route('/eliminar', methods=['POST'])
+@cross_origin()
+def eliminar_notificacion():
+   return conexion.eliminar_notificacion()
+

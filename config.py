@@ -1,8 +1,8 @@
 import psycopg2
 try:
     connection = psycopg2.connect(user = "postgres",
-                                  password = "nYpsNBaneyeaWfv9",
-                                  host = "db.hwmnvyokrosmtzdghdaq.supabase.co",
+                                  password = "db.xtqgyvvkfgankcmhvfxm.supabase.co",              
+                                  host = "db.xtqgyvvkfgankcmhvfxm.supabase.co",
                                   port = "5432",
                                   database = "postgres")
 

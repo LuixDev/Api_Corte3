@@ -5,11 +5,23 @@ import pickle
 from datetime import datetime, timedelta
 from sklearn.feature_extraction.text import CountVectorizer
 import pandas as pd
-import json 
-from sklearn.ensemble import RandomForestRegressor
+import json
+from werkzeug.utils import secure_filename
+from sklearn.metrics import mean_squared_error
+import tensorflow as tf
+import numpy as np
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart 
 from sklearn.metrics import r2_score
 from sklearn.metrics import accuracy_score, confusion_matrix
 from sklearn.model_selection import train_test_split
+
+from sklearn.metrics import accuracy_score
+from sklearn.ensemble import RandomForestRegressor
+
+from sklearn.utils import shuffle
+
 
 
 
@@ -51,81 +63,180 @@ class Models():
         return jsonify(response), 200
    
 
-
-   def getAll(self):
+   def getn(self):
         cur = connection.cursor()
-        cur.execute('SELECT * FROM gestion')
+        cur.execute('SELECT * FROM contacto')
         rv = cur.fetchall()
-        cur.close()
-
-        # Generar una lista vacía de objetos
         payload = []
-
-        # Agregar cada objeto a la lista de objetos
+        content = {}
         for result in rv:
-            obj = {
-                'fixed acidity': result[0],
-                'volatile acidity': result[1],
-                'citric acid': result[2],
-                'residual sugar': result[3],
-                'chlorides': result[4],
-                'free sulfur dioxide': result[5],
-                'total sulfur dioxide': result[6],
-                'density': result[7],
-                'pH': result[8],
-                'sulphates': result[9],
-                'alcohol': result[10],
-                'quality': result[11]
-            }
-            payload.append(obj)
-
-        # Devolver la lista de objetos como JSON
+         content = {'id': result[0], 'name': result[1], 'email': result[2], 'message': result[3]}
+         payload.append(content)
+        
         return jsonify(payload)
-   
-   def getAlcohol(self):
-    cur = connection.cursor()
-    cur.execute('SELECT alcohol FROM gestion LIMIT 1')
-    result = cur.fetchone()
-    cur.close()
 
-    # Devolver el dato como JSON
-    return jsonify({'alcohol': result[0]})
-   
-   def getQuality(self):
-    cur = connection.cursor()
-    cur.execute('SELECT quality FROM gestion LIMIT 1')
-    result = cur.fetchone()
-    cur.close()
 
-    # Devolver el dato como JSON
-    return jsonify({'quality': result[0]})
+   def eliminar_notificacion(self):
+     
+     data = request.get_json()
+     id = data['id']
+     responder = data['responder']
+     email = data['email']
+     cur = connection.cursor()
+     cur.execute('DELETE FROM  contacto WHERE id = %s', (id,))
+     connection.commit()
+     cur.execute('SELECT * FROM contacto')
+     cur.fetchall()
+     smtp_host = 'smtp-mail.outlook.com'
+     smtp_port = 587
+     username = 'gwermk@hotmail.com'
+     password = 'Ht56848*'
 
- 
+     from_email = 'gwermk@hotmail.com'
+     to_email =   email
+     subject = 'RegresionLogistica'
+     body = responder
 
-   def predecir(self):
-    # Obtenemos el tamaño de la casa del usuario
-    data = request.get_json()
-    mensaje = data['mensaje']
+     # Crea el objeto MIMEText con el cuerpo del mensaje
+     message = MIMEMultipart()
+     message['From'] = from_email
+     message['To'] = to_email
+     message['Subject'] = subject
+     message.attach(MIMEText(body, 'plain'))
+
+    # Establece la conexión SMTP y envía el correo electrónico
+     with smtplib.SMTP(smtp_host, smtp_port) as server:
+        server.starttls()
+        server.login(username, password)
+        server.send_message(message)
+     
+     return jsonify("Mensaje enviado")
+
+
+
+   def celcius(self):
+      data = request.get_json()
+      dato = float(data['mensaje'])
+      celsius = np.array([-40, -10, 0, 8, 15, 22, 38], dtype=float)
+      fahrenheit = np.array([-40, 14, 32, 46, 59, 72, 100], dtype=float)
+      oculta1 = tf.keras.layers.Dense(units=3, input_shape=[1])
+      oculta2 = tf.keras.layers.Dense(units=3)
+      salida = tf.keras.layers.Dense(units=1)
+      modelo = tf.keras.Sequential([oculta1, oculta2, salida])
+      modelo.compile(
+      optimizer=tf.keras.optimizers.Adam(0.1),
+      loss='mean_squared_error'
+)
+      modelo.fit(celsius, fahrenheit, epochs=800, verbose=False)
+      resultado = modelo.predict([dato])
+      resultado_list = resultado.tolist()  # Convert ndarray to list
     
-    df = pd.DataFrame({'columna_1': [1, 2, 3, 4, 5, 6, 7, 8], 'columna_mensaje': [3, 2, 1, 5, 6, 7, 8, mensaje]})
-   
-    # Realizamos la predicción con el modelo de Bosque Aleatorio
-    X = df.drop(columns=['columna_mensaje'])
-    y = df['columna_mensaje']
+      return json.dumps(resultado_list)
 
-    # dividir los datos en conjunto de entrenamiento y conjunto de prueba
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # instanciar el modelo de bosque aleatorio
-    rf = RandomForestRegressor(n_estimators=100, random_state=42)
-
-    # entrenar el modelo
-    rf.fit(X_train, y_train)
-
-    y_pred = rf.predict(X_test) 
-    score = r2_score(y_test, y_pred)
   
-    return jsonify({'y_pred': list(y_pred), 'score': f"R2 score: {score:.3f}"})
-   
+   def predecir(self):
+    archivo = request.files['file']
+    text1 = request.form['text1']
+    nombre_archivo = secure_filename(archivo.filename)
+ 
+    archivo.save(nombre_archivo)
+    try: 
+     
+     df = pd.read_csv(nombre_archivo, delimiter=',' ,encoding='utf-8')
+     X = df.drop(text1, axis=1)
+     y = df[text1]
+    except:
 
+        df = pd.read_csv(nombre_archivo, delimiter=';' ,encoding='utf-8')
+        X = df.drop(text1, axis=1)
+        y = df[text1]
+  
+    X = df.drop(text1, axis=1)
+    y = df[text1]
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.30, random_state=42)
+
+    
+    rf = RandomForestRegressor(n_estimators=200, random_state=42)
+
+    rf.fit(X_train, y_train)
+    y_pred = rf.predict(X_test)
+    mse = mean_squared_error(y_test, y_pred)
+    score = r2_score(y_test, y_pred)
+    y_pred_entero = [int(elemento) for elemento in y_pred]
+
+  
+    resultado1 = sum(y_pred_entero) / len(y_pred_entero)
+   
+    resultados = {
+        "----SCORE": score,
+        "----MSE": mse,
+        "----Predicciones": resultado1
+    }
+    cursor = connection.cursor()
+    cursor.execute("INSERT INTO respuesta  (message) VALUES (%s)", (resultados))
+    connection.commit()
+    
+   
+    return jsonify(resultados)
+
+
+   def getPre(self):
+        cur = connection.cursor()
+        cur.execute('SELECT * FROM respuesta')
+        rv = cur.fetchall()
+        payload = []
+        content = {}
+        for result in rv:
+         content = {'id': result[0], 'menssage': result[1]}
+         payload.append(content)
+        return jsonify(payload)
+
+
+   def enviar(self):
+        data = request.get_json()
+        name = data['name']
+        message = data['message']
+        email = data['email']
+
+        # Verificar el nombre de usuario y la contraseña en la base de datos
+        cursor = connection.cursor()
+        cursor.execute("INSERT INTO contacto  (name,message,email) VALUES (%s, %s,%s)", (name,message,email))
+        connection.commit()
+        
+        smtp_host = 'smtp-mail.outlook.com'
+        smtp_port = 587
+        username = 'gwermk@hotmail.com'
+        password = 'Ht56848*'
+
+        # Configura los detalles del correo electrónico
+        from_email = 'gwermk@hotmail.com'
+        to_email =   email
+        subject = 'Gracias por contactarnos'
+        body = 'Hemos recibido tu mensajes'
+
+        # Crea el objeto MIMEText con el cuerpo del mensaje
+        message = MIMEMultipart()
+        message['From'] = from_email
+        message['To'] = to_email
+        message['Subject'] = subject
+        message.attach(MIMEText(body, 'plain'))
+
+        # Establece la conexión SMTP y envía el correo electrónico
+        with smtplib.SMTP(smtp_host, smtp_port) as server:
+            server.starttls()
+            server.login(username, password)
+            server.send_message(message)
+
+        print('Correo electrónico enviado')
+        response = {
+        'success': True,
+        'message': 'Dato creado exitosamente'
+    }
+        
+               
+            
+        
+        return jsonify(response)
 
