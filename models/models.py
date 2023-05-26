@@ -175,7 +175,7 @@ class Models():
         "----Predicciones": resultado1
     }
     cursor = connection.cursor()
-    cursor.execute("INSERT INTO respuesta  (message) VALUES (%s)", (resultados))
+    cursor.execute("INSERT INTO respuesta  (menssage) VALUES (%s)", (resultado1))
     connection.commit()
     
    
